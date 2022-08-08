@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
+	"strconv"
 	"syscall"
 )
 
@@ -25,10 +27,24 @@ func run() {
     cmd.Stdin = os.Stdin
     cmd.Stdout = os.Stdout
     cmd.Stderr = os.Stderr
-    cmd.SysProcAttr = &syscall.SysProcAttr {
-        Cloneflags: syscall.CLONE_NEWUTS | syscall.CLONE_NEWPID | syscall.CLONE_NEWNS,
-        Unshareflags: syscall.CLONE_NEWNS,
-    }
+    cmd.SysProcAttr = &syscall.SysProcAttr{
+		Cloneflags: syscall.CLONE_NEWUTS | syscall.CLONE_NEWPID | syscall.CLONE_NEWNS |syscall.CLONE_NEWUSER,
+		Unshareflags: syscall.CLONE_NEWNS,
+		UidMappings: []syscall.SysProcIDMap{{
+			ContainerID: 0,
+			HostID: syscall.Getuid(),
+			Size: 1,
+		}},
+		GidMappings: []syscall.SysProcIDMap{{
+			ContainerID: 0,
+			HostID: syscall.Getgid(),
+			Size: 1,
+		}},
+		Credential: &syscall.Credential{
+			Uid: uint32(syscall.Getuid()),
+			Gid: uint32(syscall.Getuid()),
+		},
+	}
 
     must(cmd.Run())
 }
@@ -41,14 +57,26 @@ func child() {
     cmd.Stdout = os.Stdout
     cmd.Stderr = os.Stderr
 
+    cg()
+
     must(syscall.Sethostname([]byte("container")))
-    must(syscall.Chroot("./ubuntu-fs"))
+    must(syscall.Chroot("./alpine-fs"))
     must(syscall.Chdir("/"))
     must(syscall.Mount("proc", "proc", "proc", 0, ""))
+    must(syscall.Mount("dev", "dev", "tmpfs", 0, ""))
 
     must(cmd.Run())
 
     must(syscall.Unmount("proc", 0))
+    must(syscall.Unmount("dev", 0))
+}
+
+func cg() {
+	cgroups := "/sys/fs/cgroup/"
+	pids := path.Join(cgroups, "pids")
+	os.Mkdir(pids, 0755)
+	must(os.WriteFile(path.Join(pids, "pids.max"), []byte("20"), 0700))
+	must(os.WriteFile(path.Join(pids, "cgroup.procs"), []byte(strconv.Itoa(os.Getpid())), 0700))
 }
 
 func must(err error) {
