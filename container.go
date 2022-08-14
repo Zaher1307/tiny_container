@@ -10,6 +10,10 @@ import (
 )
 
 func main() {
+	if len(os.Args) < 3 {
+		fmt.Fprintf(os.Stderr, "Invalid arguments")
+		os.Exit(1)
+	}
 	switch os.Args[1] {
 	case "run":
         err := run()
