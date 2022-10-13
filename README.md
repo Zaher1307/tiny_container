@@ -1,5 +1,6 @@
 # Container
 Simple Container implementation in go using linux namespaces and cgroups.
+### ### [My session](https://www.youtube.com/watch?v=PuSW95wG6kU) about linux namespaces and cgroups with implementation of this container 
 
 ## Usage:
 1- first clone the project.
