@@ -16,15 +16,15 @@ func main() {
 	}
 	switch os.Args[1] {
 	case "run":
-        err := run()
+		err := run()
 		if err != nil {
-            fmt.Fprintf(os.Stderr, err.Error())
+			fmt.Fprintf(os.Stderr, err.Error())
 			os.Exit(1)
 		}
 	case "child":
-        err := child()
+		err := child()
 		if err != nil {
-            fmt.Fprintf(os.Stderr, err.Error())
+			fmt.Fprintf(os.Stderr, err.Error())
 			os.Exit(1)
 		}
 	default:
